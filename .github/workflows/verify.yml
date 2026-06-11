@@ -1,0 +1,30 @@
+name: Verify
+
+on: push
+ 
+jobs: 
+  tests:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Verify that the Docker image for the action builds
+        run: docker build . --file Dockerfile      
+ 
+      - uses: mcncl/trigger-pipeline-action@master
+        id: buildkite
+        with:
+          buildkite_api_access_token: ${{ secrets.BUILDKITE_TOKEN }}
+          pipeline: "testkite/basic-pipeline"
+          wait: true
+          wait_interval: 10
+          wait_timeout: 300
+
+      - name: Check Build State
+        run: |
+          echo "Build URL: ${{ steps.buildkite.outputs.url }}"
+          echo "Build State: ${{ steps.buildkite.outputs.state }}"
+      
+      - name: Verify output
+        run: echo ${{join(steps.tests.outputs.*, '\n')}} 
